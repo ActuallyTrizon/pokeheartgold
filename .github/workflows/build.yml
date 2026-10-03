@@ -14,7 +14,7 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
 
     steps:
       - name: Update and Install Software
@@ -32,7 +32,7 @@ jobs:
           sudo apt -y --allow-downgrades install --install-recommends winehq-stable
 
       - name: Checkout Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Repo
         run: |
@@ -68,26 +68,20 @@ jobs:
           GAME_REVISION: 0
         run: make -j4 2> >(sed -r 's/^/::error::/')
 
+      - name: Upload The ROMs
+        uses: actions/upload-artifact@v7
+        with:
+          name: hgss-roms
+          path: |
+            *.nds
+            *.nds.elf
+
       - name: Calcrom
         id: calcrom
         if: ${{ github.event_name == 'push' }}
         uses: ./.github/actions/calcrom/
         with:
           romnames: heartgold.us soulsilver.us
-
-      - name: Webhook
-        if: ${{ github.event_name == 'push' }}
-        uses: tsickert/discord-webhook@b217a69502f52803de774ded2b1ab7c282e99645 # v7.0.0
-        with:
-          webhook-url: ${{ secrets.WEBHOOKURL }}
-          content: |
-            pokeheartgold progress:
-            ```
-            ${{ steps.calcrom.outputs.calcrom_output }}
-            ```
-          username: OK
-          avatar-url: https://i.imgur.com/38BQHdd.png
-        continue-on-error: true
 
       - name: Post error archive
         if: failure()
@@ -104,7 +98,7 @@ jobs:
 
       - name: Checkout xMAP
         if: ${{ github.event_name == 'push' && github.repository == 'pret/pokeheartgold' }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           path: "xmap"
           ref: "xmap"
